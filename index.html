@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrekkandTravel Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        accent: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .backdrop { backdrop-filter: blur(4px); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .dropdown-content { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-out; 
+        }
+        .dropdown-content.active { max-height: 500px; }
+        .loading-skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Main Content -->
+    <div class="w-full">
+        <!-- Top Header -->
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-mountain text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">TrekkandTravel</h2>
+                            <p class="text-gray-600">Admin Panel</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
+                        <i class="fas fa-calendar text-gray-500"></i>
+                        <span class="text-sm text-gray-600" id="currentDate"></span>
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Dashboard Content -->
+        <main class="p-6">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Resorts -->
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-hotel text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="dropdown-container">
+                            <button class="stats-dropdown p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content-stats absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10 hidden">
+                                <div class="p-2 space-y-1" id="resortDestinations">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Resorts</h3>
+                    <p class="text-3xl font-bold text-blue-600 loading-skeleton" id="resortCount">0</p>
+                </div>
+                
+                <!-- Total Packages -->
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-box text-green-600 text-xl"></i>
+                        </div>
+                        <div class="dropdown-container">
+                            <button class="stats-dropdown p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content-stats absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10 hidden">
+                                <div class="p-2 space-y-1">
+                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-600">Family</span>
+                                        <span class="text-sm font-medium" id="familyPackageCount">0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-600">Honeymoon</span>
+                                        <span class="text-sm font-medium" id="honeymoonPackageCount">0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                                        <span class="text-sm text-gray-600">Holiday</span>
+                                        <span class="text-sm font-medium" id="holidayPackageCount">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Packages</h3>
+                    <p class="text-3xl font-bold text-green-600 loading-skeleton" id="packageCount">0</p>
+                </div>
+                
+                <!-- Total Destinations -->
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-map-marker-alt text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Active Destinations</h3>
+                    <p class="text-3xl font-bold text-purple-600 loading-skeleton" id="destinationCount">0</p>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bolt text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-1">Quick Actions</h3>
+                    <p class="text-sm opacity-90 mb-4">Access frequently used features</p>
+                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <i class="fas fa-plus mr-2"></i>Add New
+                    </button>
+                </div>
+            </div>
+            
+          
+            <!-- Management Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-hotel mr-3 text-blue-600"></i>
+                        Resort Management
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="addresorts.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>Add New Resort
+                        </a>
+                        <a href="resorts.html" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-list mr-2"></i>View All Resorts
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-box mr-3 text-green-600"></i>
+                        Package Management
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="addpackages.html" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>Add New Package
+                        </a>
+                        <a href="packages.html" class="w-full bg-green-50 hover:bg-green-100 text-green-600 px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-list mr-2"></i>View All Packages
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script type="module" src="index.js"></script>
+</body>
+</html>

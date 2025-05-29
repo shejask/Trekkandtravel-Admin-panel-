@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add/Edit Package - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800" id="pageTitle">Add New Package</h1>
+            <a href="packages.html" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg">Back to Packages</a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <form id="packageForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Package Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Package Type</label>
+                        <select id="packageType" name="packageType" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Family Packages">Family Package</option>
+                            <option value="Honeymoon Packages">Honeymoon Package</option>
+                            <option value="Holiday Packages">Holiday Package</option>
+                        </select>
+                    </div>
+
+                    <!-- Place -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Place</label>
+                        <input type="text" id="place" name="place" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (days)</label>
+                        <input type="number" id="days" name="days" required min="1" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+                        <input type="number" id="price" name="price" required min="0" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Package Image</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="file" id="imageUpload" name="imageUpload" accept="image/*" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <img id="imagePreview" class="hidden h-20 w-20 object-cover rounded-lg">
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="description" name="description" required rows="4" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <!-- Highlights -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Highlights</label>
+                        <div id="highlightsContainer" class="space-y-3">
+                            <div class="highlight-item flex items-center space-x-2">
+                                <input type="text" class="highlight-input w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter highlight point">
+                                <button type="button" class="remove-highlight bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addHighlight" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add Highlight
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="window.location.href='packages.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg">Save Package</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqfvtbxCadebuMhLyZS-MB8Ypx3i53G74",
+            authDomain: "trekkandtravels-website.firebaseapp.com",
+            databaseURL: "https://trekkandtravels-website-default-rtdb.firebaseio.com",
+            projectId: "trekkandtravels-website",
+            storageBucket: "trekkandtravels-website.firebasestorage.app",
+            messagingSenderId: "297807374917",
+            appId: "1:297807374917:web:416b0710397e6b20bc112c"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Get references to Firebase services
+        const database = firebase.database();
+        const storage = firebase.storage();
+        const packagesRef = database.ref('packages');
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryParam = urlParams.get('category');
+        const packageId = urlParams.get('id');
+        const isEditing = !!packageId;
+
+        // Update page title and form based on mode
+        if (isEditing) {
+            document.getElementById('pageTitle').textContent = 'Edit Package';
+            loadPackageData();
+        }
+
+        // Load existing package data if editing
+        function loadPackageData() {
+            packagesRef.child(categoryParam).child(packageId).once('value', (snapshot) => {
+                const packageData = snapshot.val();
+                if (packageData) {
+                    document.getElementById('packageType').value = categoryParam;
+                    document.getElementById('place').value = packageData.place || '';
+                    document.getElementById('days').value = packageData.days || '';
+                    document.getElementById('price').value = packageData.price || '';
+                    document.getElementById('description').value = packageData.description || '';
+                    
+                    if (packageData.highlights) {
+                        const highlightsContainer = document.getElementById('highlightsContainer');
+                        highlightsContainer.innerHTML = '';
+                        packageData.highlights.forEach((highlight) => {
+                            addHighlightInput(highlight);
+                        });
+                    }
+
+                    if (packageData.imageUrl) {
+                        const imagePreview = document.getElementById('imagePreview');
+                        imagePreview.src = packageData.imageUrl;
+                        imagePreview.classList.remove('hidden');
+                    }
+                }
+            });
+        }
+
+        // Handle image preview
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imagePreview = document.getElementById('imagePreview');
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('packageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const packageType = document.getElementById('packageType').value;
+            const packageData = {
+                place: document.getElementById('place').value,
+                days: document.getElementById('days').value,
+                price: document.getElementById('price').value,
+                description: document.getElementById('description').value,
+                highlights: Array.from(document.querySelectorAll('.highlight-input'))
+                    .map(input => input.value)
+                    .filter(value => value.trim() !== '') // Remove empty highlights
+            };
+
+            try {
+                // Handle image upload
+                const imageFile = document.getElementById('imageUpload').files[0];
+                if (imageFile) {
+                    const storageRef = storage.ref();
+                    const imageRef = storageRef.child(`packages/${Date.now()}_${imageFile.name}`);
+                    await imageRef.put(imageFile);
+                    packageData.imageUrl = await imageRef.getDownloadURL();
+                }
+
+                // Save to database
+                if (isEditing) {
+                    await packagesRef.child(categoryParam).child(packageId).update(packageData);
+                } else {
+                    await packagesRef.child(packageType).push(packageData);
+                }
+
+                alert(isEditing ? 'Package updated successfully!' : 'Package added successfully!');
+                window.location.href = 'packages.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving package: ' + error.message);
+            }
+        });
+
+        // Add highlight input
+        function addHighlightInput(value = '') {
+            const highlightsContainer = document.getElementById('highlightsContainer');
+            const highlightItem = document.createElement('div');
+            highlightItem.className = 'highlight-item flex items-center space-x-2';
+            highlightItem.innerHTML = `
+                <input type="text" class="highlight-input w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter highlight point" value="${value}">
+                <button type="button" class="remove-highlight bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+            highlightsContainer.appendChild(highlightItem);
+
+            // Add event listener to remove button
+            highlightItem.querySelector('.remove-highlight').addEventListener('click', function() {
+                highlightItem.remove();
+            });
+        }
+
+        // Add initial highlight input
+        addHighlightInput();
+
+        // Add highlight button event listener
+        document.getElementById('addHighlight').addEventListener('click', function() {
+            addHighlightInput();
+        });
+    </script>
+</body>
+</html>
