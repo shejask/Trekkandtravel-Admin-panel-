@@ -6,6 +6,7 @@ class TrekkandTravelAdmin {
     constructor() {
         this.firebase = null;
         this.database = null;
+        this.analytics = null;
         this.destinations = [
             'Alleppey', 'Calicut', 'Coorg', 'Kannur', 'Kasaragod', 'Kochi', 'Kodaikanal',
             'Kumarakom', 'Malappuram', 'Munnar', 'Ooty', 'Thekkady',
@@ -28,20 +29,122 @@ class TrekkandTravelAdmin {
         };
         
         this.init();
-    }
-
-    // Initialize the application
+    }    // Initialize the application
     async init() {
         try {
             this.showLoading();
             await this.initializeFirebase();
+            await this.initializeAnalytics(); // Add Analytics initialization
             this.setupEventListeners();
             this.setupUI();
             await this.loadData();
+            await this.loadSubscribers();
             this.hideLoading();
         } catch (error) {
             console.error('Initialization error:', error);
             this.showError('Failed to initialize dashboard');
+        }
+    }
+
+    // Initialize Google Analytics
+    async initializeAnalytics() {
+        try {
+            // Load the Google Analytics Data API client
+            await this.loadGapiClient();
+            await gapi.client.init({
+                'apiKey': 'YOUR-API-KEY',
+                'discoveryDocs': ['https://analyticsdata.googleapis.com/$discovery/rest'],
+            });
+            await this.fetchAnalyticsData();
+            
+            // Refresh analytics data every 5 minutes
+            setInterval(() => this.fetchAnalyticsData(), 300000);
+        } catch (error) {
+            console.error('Analytics initialization error:', error);
+        }
+    }
+
+    // Load GAPI Client
+    loadGapiClient() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://apis.google.com/js/api.js';
+            script.onload = () => {
+                gapi.load('client', resolve);
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // Fetch Analytics Data
+    async fetchAnalyticsData() {
+        try {
+            const analyticsData = await gapi.client.analyticsdata.properties.runReport({
+                property: 'properties/YOUR-PROPERTY-ID',
+                resource: {
+                    dateRanges: [
+                        {
+                            startDate: '30daysAgo',
+                            endDate: 'today',
+                        },
+                    ],
+                    metrics: [
+                        {
+                            name: 'activeUsers',
+                        },
+                    ],
+                },
+            });
+
+            // Update visitor counts in the UI
+            const totalVisitors = analyticsData.result.rows[0].metricValues[0].value;
+            document.getElementById('visitorCount').textContent = totalVisitors;
+
+            // Fetch additional time period data
+            await this.fetchTimeRangeData('today', 'today', 'visitorCountToday');
+            await this.fetchTimeRangeData('7daysAgo', 'today', 'visitorCountWeek');
+            await this.fetchTimeRangeData('30daysAgo', 'today', 'visitorCountMonth');
+
+        } catch (error) {
+            console.error('Error fetching Analytics data:', error);
+        }
+    }
+
+    // Fetch data for specific time ranges
+    async fetchTimeRangeData(startDate, endDate, elementId) {
+        try {
+            const response = await gapi.client.analyticsdata.properties.runReport({
+                property: 'properties/YOUR-PROPERTY-ID',
+                resource: {
+                    dateRanges: [{ startDate, endDate }],
+                    metrics: [{ name: 'activeUsers' }],
+                },
+            });
+            document.getElementById(elementId).textContent = 
+                response.result.rows[0].metricValues[0].value;
+        } catch (error) {
+            console.error(`Error fetching ${startDate} to ${endDate} data:`, error);
+        }
+    }
+
+    // Load Subscribers
+    async loadSubscribers() {
+        try {
+            const subscribersRef = this.firebaseRef(this.database, 'subscribe');
+            this.firebaseOnValue(subscribersRef, (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                
+                // Update subscriber count in the UI
+                const subscriberCountSpan = document.querySelector('#subscriberCount span');
+                if (subscriberCountSpan) {
+                    subscriberCountSpan.textContent = count;
+                }
+            });
+        } catch (error) {
+            console.error('Error loading subscribers:', error);
+            throw new Error('Failed to load subscribers');
         }
     }
 
@@ -110,7 +213,8 @@ class TrekkandTravelAdmin {
             console.log('Starting data load...');
             await Promise.all([
                 this.loadResorts(),
-                this.loadPackages()
+                this.loadPackages(),
+                this.loadSubscribers()
             ]);
             console.log('Data loaded successfully');
             this.updateAllStats();
@@ -204,6 +308,26 @@ class TrekkandTravelAdmin {
                 reject(error);
             }
         });
+    }
+
+    // Load Subscribers
+    async loadSubscribers() {
+        try {
+            const subscribersRef = this.firebaseRef(this.database, 'subscribe');
+            this.firebaseOnValue(subscribersRef, (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                
+                // Update subscriber count in the UI
+                const subscriberCountSpan = document.querySelector('#subscriberCount span');
+                if (subscriberCountSpan) {
+                    subscriberCountSpan.textContent = count;
+                }
+            });
+        } catch (error) {
+            console.error('Error loading subscribers:', error);
+            throw new Error('Failed to load subscribers');
+        }
     }
 
     calculateResortStats() {
