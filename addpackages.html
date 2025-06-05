@@ -233,7 +233,13 @@
                         title: item.querySelector('.itinerary-title').value.trim(),
                         description: item.querySelector('.itinerary-description').value.trim()
                     }))
-                    .filter(item => item.title !== '' || item.description !== '')
+                    .filter(item => item.title !== '' || item.description !== ''),
+                faq: Array.from(document.querySelectorAll('.faq-item'))
+                    .map(item => ({
+                        question: item.querySelector('.faq-question').value.trim(),
+                        answer: item.querySelector('.faq-answer').value.trim()
+                    }))
+                    .filter(item => item.question !== '' || item.answer !== '')
             };
 
             try {
