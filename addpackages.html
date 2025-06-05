@@ -82,6 +82,54 @@
                             Add Highlight
                         </button>
                     </div>
+
+                    <!-- Itinerary -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Itinerary</label>
+                        <div id="itineraryContainer" class="space-y-4">
+                            <div class="itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title">
+                                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description"></textarea>
+                            </div>
+                        </div>
+                        <button type="button" id="addItinerary" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add Day
+                        </button>
+                    </div>
+
+                    <!-- FAQ Section -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Frequently Asked Questions</label>
+                        <div id="faqContainer" class="space-y-4">
+                            <div class="faq-item space-y-2 p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <input type="text" class="faq-question w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Question">
+                                    <button type="button" class="remove-faq bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <textarea class="faq-answer w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2" placeholder="Answer"></textarea>
+                            </div>
+                        </div>
+                        <button type="button" id="addFaq" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add FAQ
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-4">
@@ -122,33 +170,37 @@
             loadPackageData();
         }
 
-        // Load existing package data if editing
-        function loadPackageData() {
-            packagesRef.child(categoryParam).child(packageId).once('value', (snapshot) => {
-                const packageData = snapshot.val();
-                if (packageData) {
-                    document.getElementById('packageType').value = categoryParam;
-                    document.getElementById('place').value = packageData.place || '';
-                    document.getElementById('days').value = packageData.days || '';
-                    document.getElementById('price').value = packageData.price || '';
-                    document.getElementById('description').value = packageData.description || '';
-                    
-                    if (packageData.highlights) {
-                        const highlightsContainer = document.getElementById('highlightsContainer');
-                        highlightsContainer.innerHTML = '';
-                        packageData.highlights.forEach((highlight) => {
-                            addHighlightInput(highlight);
-                        });
-                    }
+        // Add itinerary input
+        function addItineraryInput(title = '', description = '') {
+            const itineraryContainer = document.getElementById('itineraryContainer');
+            const itineraryItem = document.createElement('div');
+            itineraryItem.className = 'itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            itineraryItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title" value="${title}">
+                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description">${description}</textarea>
+            `;
+            itineraryContainer.appendChild(itineraryItem);
 
-                    if (packageData.imageUrl) {
-                        const imagePreview = document.getElementById('imagePreview');
-                        imagePreview.src = packageData.imageUrl;
-                        imagePreview.classList.remove('hidden');
-                    }
-                }
+            // Add event listener to remove button
+            itineraryItem.querySelector('.remove-itinerary').addEventListener('click', function() {
+                itineraryItem.remove();
             });
         }
+
+        // Add initial itinerary input
+        addItineraryInput();
+
+        // Add itinerary button event listener
+        document.getElementById('addItinerary').addEventListener('click', function() {
+            addItineraryInput();
+        });        // Function moved to end of file to include all features
 
         // Handle image preview
         document.getElementById('imageUpload').addEventListener('change', function(e) {
@@ -167,16 +219,21 @@
         // Handle form submission
         document.getElementById('packageForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const packageType = document.getElementById('packageType').value;
             const packageData = {
                 place: document.getElementById('place').value,
-                days: document.getElementById('days').value,
-                price: document.getElementById('price').value,
+                days: `${String(document.getElementById('days').value).padStart(2, '0')} Days / ${String(Number(document.getElementById('days').value) - 1).padStart(2, '0')} Nights`,
+                price: Number(document.getElementById('price').value.replace(/,/g, '')) || null,
                 description: document.getElementById('description').value,
                 highlights: Array.from(document.querySelectorAll('.highlight-input'))
                     .map(input => input.value)
-                    .filter(value => value.trim() !== '') // Remove empty highlights
+                    .filter(value => value.trim() !== ''),
+                itinerary: Array.from(document.querySelectorAll('.itinerary-item'))
+                    .map(item => ({
+                        title: item.querySelector('.itinerary-title').value.trim(),
+                        description: item.querySelector('.itinerary-description').value.trim()
+                    }))
+                    .filter(item => item.title !== '' || item.description !== '')
             };
 
             try {
@@ -232,6 +289,132 @@
         document.getElementById('addHighlight').addEventListener('click', function() {
             addHighlightInput();
         });
+
+        // Add itinerary item
+        function addItineraryItem(title = '', description = '') {
+            const itineraryContainer = document.getElementById('itineraryContainer');
+            const itineraryItem = document.createElement('div');
+            itineraryItem.className = 'itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            itineraryItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title" value="${title}">
+                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description">${description}</textarea>
+            `;
+            itineraryContainer.appendChild(itineraryItem);
+
+            // Add event listener to remove button
+            itineraryItem.querySelector('.remove-itinerary').addEventListener('click', function() {
+                itineraryItem.remove();
+            });
+        }
+
+        // Add initial itinerary item
+        addItineraryItem();
+
+        // Add itinerary button event listener
+        document.getElementById('addItinerary').addEventListener('click', function() {
+            addItineraryItem();
+        });
+
+        // Add FAQ item
+        function addFaqItem(question = '', answer = '') {
+            const faqContainer = document.getElementById('faqContainer');
+            const faqItem = document.createElement('div');
+            faqItem.className = 'faq-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            faqItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="faq-question w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Question" value="${question}">
+                    <button type="button" class="remove-faq bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="faq-answer w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2" placeholder="Answer">${answer}</textarea>
+            `;
+            faqContainer.appendChild(faqItem);
+
+            // Add event listener to remove button
+            faqItem.querySelector('.remove-faq').addEventListener('click', function() {
+                faqItem.remove();
+            });
+        }
+
+        // Add initial FAQ item
+        addFaqItem();
+
+        // Add FAQ button event listener
+        document.getElementById('addFaq').addEventListener('click', function() {
+            addFaqItem();
+        });        // Updated loadPackageData function with proper type handling
+        function loadPackageData() {
+            packagesRef.child(categoryParam).child(packageId).once('value', (snapshot) => {
+                const packageData = snapshot.val();
+                if (packageData) {
+                    document.getElementById('packageType').value = categoryParam;
+                    document.getElementById('place').value = packageData.place || '';                    // Handle days/duration with proper type checking and string format
+                    let daysValue = '';
+                    if (typeof packageData.days === 'number') {
+                        daysValue = packageData.days;
+                    } else if (typeof packageData.days === 'string') {
+                        // Extract days from format like "05 Days / 04 Nights"
+                        const match = packageData.days.match(/(\d+)\s*Days/i);
+                        if (match) {
+                            daysValue = parseInt(match[1], 10);
+                        }
+                    } else if (typeof packageData.duration === 'number') {
+                        daysValue = packageData.duration;
+                    }
+                    document.getElementById('days').value = daysValue;
+                    
+                    // Handle price with proper formatting
+                    let priceValue = '';
+                    if (typeof packageData.price === 'number') {
+                        priceValue = packageData.price;
+                    } else if (typeof packageData.price === 'string') {
+                        priceValue = Number(packageData.price.replace(/,/g, '')) || '';
+                    }
+                    document.getElementById('price').value = priceValue;
+                    document.getElementById('description').value = packageData.description || '';
+
+                    if (packageData.highlights) {
+                        const highlightsContainer = document.getElementById('highlightsContainer');
+                        highlightsContainer.innerHTML = '';
+                        packageData.highlights.forEach((highlight) => {
+                            addHighlightInput(highlight);
+                        });
+                    }
+
+                    if (packageData.itinerary) {
+                        const itineraryContainer = document.getElementById('itineraryContainer');
+                        itineraryContainer.innerHTML = '';
+                        packageData.itinerary.forEach((item) => {
+                            addItineraryInput(item.title, item.description);
+                        });
+                    }
+
+                    if (packageData.faq) {
+                        const faqContainer = document.getElementById('faqContainer');
+                        faqContainer.innerHTML = '';
+                        packageData.faq.forEach((item) => {
+                            addFaqItem(item.question, item.answer);
+                        });
+                    }
+
+                    if (packageData.imageUrl) {
+                        const imagePreview = document.getElementById('imagePreview');
+                        imagePreview.src = packageData.imageUrl;
+                        imagePreview.classList.remove('hidden');
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
