@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management - TrekkandTravel Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">Add New Customer</h1>
+            
+            <form id="customerForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                            Full Name
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="name" type="text" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                            Email
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="email" type="email" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="phone">
+                            Phone Number
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="phone" type="tel" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="address">
+                            Address
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="address" type="text" required>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Add Customer
+                    </button>
+                </div>
+            </form>
+
+            <!-- Customer List -->
+            <div class="mt-8">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Customer List</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerTableBody">
+                            <!-- Customer rows will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqfvtbxCadebuMhLyZS-MB8Ypx3i53G74",
+            authDomain: "trekkandtravels-website.firebaseapp.com",
+            databaseURL: "https://trekkandtravels-website-default-rtdb.firebaseio.com",
+            projectId: "trekkandtravels-website",
+            storageBucket: "trekkandtravels-website.firebasestorage.app",
+            messagingSenderId: "297807374917",
+            appId: "1:297807374917:web:416b0710397e6b20bc112c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const customersRef = ref(database, 'customers');
+
+        // Form submission handler
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const customerData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to Firebase
+            push(customersRef, customerData)
+                .then(() => {
+                    // Clear form
+                    e.target.reset();
+                    alert('Customer added successfully!');
+                })
+                .catch((error) => {
+                    console.error('Error adding customer:', error);
+                    alert('Error adding customer. Please try again.');
+                });
+        });
+
+        // Load and display customers
+        onValue(customersRef, (snapshot) => {
+            const customerTableBody = document.getElementById('customerTableBody');
+            customerTableBody.innerHTML = ''; // Clear existing rows
+
+            const data = snapshot.val();
+            if (data) {
+                Object.values(data).forEach(customer => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-300">
+                            <div class="text-sm leading-5 text-gray-900">${customer.name}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-300">
+                            <div class="text-sm leading-5 text-gray-900">${customer.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-300">
+                            <div class="text-sm leading-5 text-gray-900">${customer.phone}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-300">
+                            <div class="text-sm leading-5 text-gray-900">${customer.address}</div>
+                        </td>
+                    `;
+                    customerTableBody.appendChild(row);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
