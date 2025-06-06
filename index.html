@@ -3,310 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrekkandTravel Admin Panel</title>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR-MEASUREMENT-ID"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'YOUR-MEASUREMENT-ID');
-    </script>
+    <title>Add/Edit Package - Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        accent: '#10b981'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .sidebar-transition { transition: transform 0.3s ease-in-out; }
-        .backdrop { backdrop-filter: blur(4px); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .dropdown-content { 
-            max-height: 0; 
-            overflow: hidden; 
-            transition: max-height 0.3s ease-out; 
-        }
-        .dropdown-content.active { max-height: 500px; }
-        .loading-skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 </head>
-<body class="bg-gray-50 font-sans">
-    <!-- Login Form -->
-    <div id="loginForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-96">
-            <div class="flex items-center space-x-3 mb-6">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-mountain text-white text-lg"></i>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800" id="pageTitle">Add New Package</h1>
+            <a href="packages.html" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg">Back to Packages</a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <form id="packageForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Package Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Package Type</label>
+                        <select id="packageType" name="packageType" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Family Packages">Family Package</option>
+                            <option value="Honeymoon Packages">Honeymoon Package</option>
+                            <option value="Holiday Packages">Holiday Package</option>
+                        </select>
+                    </div>
+
+                    <!-- Place -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Place</label>
+                        <input type="text" id="place" name="place" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (days)</label>
+                        <input type="number" id="days" name="days" required min="1" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+                        <input type="number" id="price" name="price" required min="0" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Package Image</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="file" id="imageUpload" name="imageUpload" accept="image/*" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <img id="imagePreview" class="hidden h-20 w-20 object-cover rounded-lg">
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="description" name="description" required rows="4" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <!-- Highlights -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Highlights</label>
+                        <div id="highlightsContainer" class="space-y-3">
+                            <div class="highlight-item flex items-center space-x-2">
+                                <input type="text" class="highlight-input w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter highlight point">
+                                <button type="button" class="remove-highlight bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addHighlight" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add Highlight
+                        </button>
+                    </div>
+
+                    <!-- Itinerary -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Itinerary</label>
+                        <div id="itineraryContainer" class="space-y-4">
+                            <div class="itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title">
+                                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description"></textarea>
+                            </div>
+                        </div>
+                        <button type="button" id="addItinerary" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add Day
+                        </button>
+                    </div>
+
+                    <!-- FAQ Section -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Frequently Asked Questions</label>
+                        <div id="faqContainer" class="space-y-4">
+                            <div class="faq-item space-y-2 p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <input type="text" class="faq-question w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Question">
+                                    <button type="button" class="remove-faq bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <textarea class="faq-answer w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2" placeholder="Answer"></textarea>
+                            </div>
+                        </div>
+                        <button type="button" id="addFaq" class="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add FAQ
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">TrekkandTravel</h2>
-                    <p class="text-gray-600">Admin Login</p>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="window.location.href='packages.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg">Save Package</button>
                 </div>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter username">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
-                </div>
-                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Login
-                </button>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div id="mainContent" class="w-full hidden">
-        <!-- Top Header -->
-        <header class="bg-white border-b border-gray-200 px-6 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-mountain text-white text-lg"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">TrekkandTravel</h2>
-                            <p class="text-gray-600">Admin Panel</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="hidden md:flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                        <i class="fas fa-calendar text-gray-500"></i>
-                        <span class="text-sm text-gray-600" id="currentDate"></span>
-                    </div>
-                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-white text-sm"></i>
-                    </div>
-                </div>
-            </div>
-        </header>
-        
-        <!-- Dashboard Content -->
-        <main class="p-6">
-            <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Website Visitors -->
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-orange-600 text-xl"></i>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="stats-dropdown p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content-stats absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10 hidden">
-                                <div class="p-2 space-y-1">
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">Today</span>
-                                        <span class="text-sm font-medium" id="visitorCountToday">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">This Week</span>
-                                        <span class="text-sm font-medium" id="visitorCountWeek">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">This Month</span>
-                                        <span class="text-sm font-medium" id="visitorCountMonth">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Website Visitors</h3>
-                    <p class="text-3xl font-bold text-orange-600 loading-skeleton" id="visitorCount">990</p>
-                </div>
-
-                <!-- Total Resorts -->
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-hotel text-blue-600 text-xl"></i>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="stats-dropdown p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content-stats absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10 hidden">
-                                <div class="p-2 space-y-1" id="resortDestinations">
-                                    <!-- Will be populated by JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Resorts</h3>
-                    <p class="text-3xl font-bold text-blue-600 loading-skeleton" id="resortCount">0</p>
-                </div>
-                
-                <!-- Total Packages -->
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-box text-green-600 text-xl"></i>
-                        </div>
-                        <div class="dropdown-container">
-                            <button class="stats-dropdown p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content-stats absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10 hidden">
-                                <div class="p-2 space-y-1">
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">Family</span>
-                                        <span class="text-sm font-medium" id="familyPackageCount">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">Honeymoon</span>
-                                        <span class="text-sm font-medium" id="honeymoonPackageCount">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                        <span class="text-sm text-gray-600">Holiday</span>
-                                        <span class="text-sm font-medium" id="holidayPackageCount">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Packages</h3>
-                    <p class="text-3xl font-bold text-green-600 loading-skeleton" id="packageCount">0</p>
-                </div>
-                
-                <!-- Total Destinations -->
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-map-marker-alt text-purple-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-1">Active Destinations</h3>
-                    <p class="text-3xl font-bold text-purple-600 loading-skeleton" id="destinationCount">0</p>
-                </div>
-                
-                <!-- Quick Actions -->
-                <!-- <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-bolt text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-semibold mb-1">Quick Actions</h3>
-                    <p class="text-sm opacity-90 mb-4">Access frequently used features</p>
-                    <button class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all">
-                        <i class="fas fa-plus mr-2"></i>Add New
-                    </button>
-                </div> -->
-            </div>
-            
-            <!-- Management Actions -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center">
-                        <i class="fas fa-hotel mr-3 text-blue-600"></i>
-                        Resort Management
-                    </h3>
-                    <div class="space-y-3">
-                        <a href="addresorts.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-plus mr-2"></i>Add New Resort
-                        </a>
-                        <a href="resorts.html" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-list mr-2"></i>View All Resorts
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center">
-                        <i class="fas fa-box mr-3 text-green-600"></i>
-                        Package Management
-                    </h3>
-                    <div class="space-y-3">
-                        <a href="addpackages.html" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-plus mr-2"></i>Add New Package
-                        </a>
-                        <a href="packages.html" class="w-full bg-green-50 hover:bg-green-100 text-green-600 px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-list mr-2"></i>View All Packages
-                        </a>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center">
-                        <i class="fas fa-envelope mr-3 text-purple-600"></i>
-                        Subscriber Management
-                    </h3>
-                    <div class="space-y-3">
-                        <a href="Subscribe.html" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-users mr-2"></i>View All Subscribers
-                        </a>
-                        <div id="subscriberCount" class="w-full bg-purple-50 text-purple-600 px-6 py-3 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-user-check mr-2"></i>Total Subscribers: <span class="ml-2 font-semibold">0</span>
-                        </div>
-                    </div>                </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center">
-                        <i class="fas fa-users mr-3 text-orange-600"></i>
-                        Customer Management
-                    </h3>
-                    <div class="space-y-3">
-                        <a href="customer.html" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fas fa-user-plus mr-2"></i>Manage Customers
-                        </a>
-                        <div class="w-full bg-orange-50 text-orange-600 px-6 py-3 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-user-check mr-2"></i>Customer Portal
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-    
     <script>
-        // Check if user is already logged in
-        window.onload = function() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            if (isLoggedIn === 'true') {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            }
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqfvtbxCadebuMhLyZS-MB8Ypx3i53G74",
+            authDomain: "trekkandtravels-website.firebaseapp.com",
+            databaseURL: "https://trekkandtravels-website-default-rtdb.firebaseio.com",
+            projectId: "trekkandtravels-website",
+            storageBucket: "trekkandtravels-website.firebasestorage.app",
+            messagingSenderId: "297807374917",
+            appId: "1:297807374917:web:416b0710397e6b20bc112c"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Get references to Firebase services
+        const database = firebase.database();
+        const storage = firebase.storage();
+        const packagesRef = database.ref('packages');
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryParam = urlParams.get('category');
+        const packageId = urlParams.get('id');
+        const isEditing = !!packageId;
+
+        // Update page title and form based on mode
+        if (isEditing) {
+            document.getElementById('pageTitle').textContent = 'Edit Package';
+            loadPackageData();
         }
 
-        // Login function
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        // Add itinerary input
+        function addItineraryInput(title = '', description = '') {
+            const itineraryContainer = document.getElementById('itineraryContainer');
+            const itineraryItem = document.createElement('div');
+            itineraryItem.className = 'itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            itineraryItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title" value="${title}">
+                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description">${description}</textarea>
+            `;
+            itineraryContainer.appendChild(itineraryItem);
 
-            if (username === 'admin' && password === 'admin') {
-                localStorage.setItem('isLoggedIn', 'true');
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            } else {
-                alert('Invalid credentials! Please use ');
-            }
+            // Add event listener to remove button
+            itineraryItem.querySelector('.remove-itinerary').addEventListener('click', function() {
+                itineraryItem.remove();
+            });
         }
 
-        // Add logout functionality
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.reload();
+        // Add initial itinerary input
+        addItineraryInput();
+
+        // Add itinerary button event listener
+        document.getElementById('addItinerary').addEventListener('click', function() {
+            addItineraryInput();
+        });        // Function moved to end of file to include all features
+
+        // Handle image preview
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imagePreview = document.getElementById('imagePreview');
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('packageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const packageType = document.getElementById('packageType').value;
+            const packageData = {
+                place: document.getElementById('place').value,
+                days: `${String(document.getElementById('days').value).padStart(2, '0')} Days / ${String(Number(document.getElementById('days').value) - 1).padStart(2, '0')} Nights`,
+                price: Number(document.getElementById('price').value.replace(/,/g, '')) || null,
+                description: document.getElementById('description').value,
+                highlights: Array.from(document.querySelectorAll('.highlight-input'))
+                    .map(input => input.value)
+                    .filter(value => value.trim() !== ''),
+                itinerary: Array.from(document.querySelectorAll('.itinerary-item'))
+                    .map(item => ({
+                        title: item.querySelector('.itinerary-title').value.trim(),
+                        description: item.querySelector('.itinerary-description').value.trim()
+                    }))
+                    .filter(item => item.title !== '' || item.description !== ''),
+                faq: Array.from(document.querySelectorAll('.faq-item'))
+                    .map(item => ({
+                        question: item.querySelector('.faq-question').value.trim(),
+                        answer: item.querySelector('.faq-answer').value.trim()
+                    }))
+                    .filter(item => item.question !== '' || item.answer !== '')
+            };
+
+            try {
+                // Handle image upload
+                const imageFile = document.getElementById('imageUpload').files[0];
+                if (imageFile) {
+                    const storageRef = storage.ref();
+                    const imageRef = storageRef.child(`packages/${Date.now()}_${imageFile.name}`);
+                    await imageRef.put(imageFile);
+                    packageData.imageUrl = await imageRef.getDownloadURL();
+                }
+
+                // Save to database
+                if (isEditing) {
+                    await packagesRef.child(categoryParam).child(packageId).update(packageData);
+                } else {
+                    await packagesRef.child(packageType).push(packageData);
+                }
+
+                alert(isEditing ? 'Package updated successfully!' : 'Package added successfully!');
+                window.location.href = 'packages.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving package: ' + error.message);
+            }
+        });
+
+        // Add highlight input
+        function addHighlightInput(value = '') {
+            const highlightsContainer = document.getElementById('highlightsContainer');
+            const highlightItem = document.createElement('div');
+            highlightItem.className = 'highlight-item flex items-center space-x-2';
+            highlightItem.innerHTML = `
+                <input type="text" class="highlight-input w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter highlight point" value="${value}">
+                <button type="button" class="remove-highlight bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+            highlightsContainer.appendChild(highlightItem);
+
+            // Add event listener to remove button
+            highlightItem.querySelector('.remove-highlight').addEventListener('click', function() {
+                highlightItem.remove();
+            });
+        }
+
+        // Add initial highlight input
+        addHighlightInput();
+
+        // Add highlight button event listener
+        document.getElementById('addHighlight').addEventListener('click', function() {
+            addHighlightInput();
+        });
+
+        // Add itinerary item
+        function addItineraryItem(title = '', description = '') {
+            const itineraryContainer = document.getElementById('itineraryContainer');
+            const itineraryItem = document.createElement('div');
+            itineraryItem.className = 'itinerary-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            itineraryItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="itinerary-title w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Day Title" value="${title}">
+                    <button type="button" class="remove-itinerary bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="itinerary-description w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Day Description">${description}</textarea>
+            `;
+            itineraryContainer.appendChild(itineraryItem);
+
+            // Add event listener to remove button
+            itineraryItem.querySelector('.remove-itinerary').addEventListener('click', function() {
+                itineraryItem.remove();
+            });
+        }
+
+        // Add initial itinerary item
+        addItineraryItem();
+
+        // Add itinerary button event listener
+        document.getElementById('addItinerary').addEventListener('click', function() {
+            addItineraryItem();
+        });
+
+        // Add FAQ item
+        function addFaqItem(question = '', answer = '') {
+            const faqContainer = document.getElementById('faqContainer');
+            const faqItem = document.createElement('div');
+            faqItem.className = 'faq-item space-y-2 p-4 border border-gray-200 rounded-lg';
+            faqItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <input type="text" class="faq-question w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mr-2" placeholder="Question" value="${question}">
+                    <button type="button" class="remove-faq bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <textarea class="faq-answer w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="2" placeholder="Answer">${answer}</textarea>
+            `;
+            faqContainer.appendChild(faqItem);
+
+            // Add event listener to remove button
+            faqItem.querySelector('.remove-faq').addEventListener('click', function() {
+                faqItem.remove();
+            });
+        }
+
+        // Add initial FAQ item
+        addFaqItem();
+
+        // Add FAQ button event listener
+        document.getElementById('addFaq').addEventListener('click', function() {
+            addFaqItem();
+        });        // Updated loadPackageData function with proper type handling
+        function loadPackageData() {
+            packagesRef.child(categoryParam).child(packageId).once('value', (snapshot) => {
+                const packageData = snapshot.val();
+                if (packageData) {
+                    document.getElementById('packageType').value = categoryParam;
+                    document.getElementById('place').value = packageData.place || '';                    // Handle days/duration with proper type checking and string format
+                    let daysValue = '';
+                    if (typeof packageData.days === 'number') {
+                        daysValue = packageData.days;
+                    } else if (typeof packageData.days === 'string') {
+                        // Extract days from format like "05 Days / 04 Nights"
+                        const match = packageData.days.match(/(\d+)\s*Days/i);
+                        if (match) {
+                            daysValue = parseInt(match[1], 10);
+                        }
+                    } else if (typeof packageData.duration === 'number') {
+                        daysValue = packageData.duration;
+                    }
+                    document.getElementById('days').value = daysValue;
+                    
+                    // Handle price with proper formatting
+                    let priceValue = '';
+                    if (typeof packageData.price === 'number') {
+                        priceValue = packageData.price;
+                    } else if (typeof packageData.price === 'string') {
+                        priceValue = Number(packageData.price.replace(/,/g, '')) || '';
+                    }
+                    document.getElementById('price').value = priceValue;
+                    document.getElementById('description').value = packageData.description || '';
+
+                    if (packageData.highlights) {
+                        const highlightsContainer = document.getElementById('highlightsContainer');
+                        highlightsContainer.innerHTML = '';
+                        packageData.highlights.forEach((highlight) => {
+                            addHighlightInput(highlight);
+                        });
+                    }
+
+                    if (packageData.itinerary) {
+                        const itineraryContainer = document.getElementById('itineraryContainer');
+                        itineraryContainer.innerHTML = '';
+                        packageData.itinerary.forEach((item) => {
+                            addItineraryInput(item.title, item.description);
+                        });
+                    }
+
+                    if (packageData.faq) {
+                        const faqContainer = document.getElementById('faqContainer');
+                        faqContainer.innerHTML = '';
+                        packageData.faq.forEach((item) => {
+                            addFaqItem(item.question, item.answer);
+                        });
+                    }
+
+                    if (packageData.imageUrl) {
+                        const imagePreview = document.getElementById('imagePreview');
+                        imagePreview.src = packageData.imageUrl;
+                        imagePreview.classList.remove('hidden');
+                    }
+                }
+            });
         }
     </script>
-    <script type="module" src="index.js"></script>
 </body>
 </html>
