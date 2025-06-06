@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Offer Popup Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        accent: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Special Offer Popup Management</h1>
+        
+        <!-- Current Popup Display -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Current Active Popup</h2>
+            <div id="currentPopupDisplay" class="text-center">
+                <div class="text-gray-500 py-8">
+                    <i class="fas fa-image text-4xl mb-2"></i>
+                    <p>No popup currently active</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload New Popup Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">
+                <i class="fas fa-plus-circle mr-2 text-primary"></i>
+                Upload New Popup
+            </h2>
+            <form id="popupForm" class="space-y-4">
+                <div>
+                    <label for="popupImage" class="block text-sm font-medium text-gray-700 mb-2">
+                        Upload Special Offer Image
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="popupImage" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                <p class="mb-2 text-sm text-gray-500">
+                                    <span class="font-semibold">Click to upload</span> or drag and drop
+                                </p>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+                            <input type="file" id="popupImage" class="hidden" accept="image/*" required>
+                        </label>
+                    </div>
+                    <div id="imagePreview" class="mt-4 hidden">
+                        <img id="previewImg" class="max-w-full h-auto rounded-lg shadow-md" alt="Preview">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Popup
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p class="text-gray-700">Uploading popup...</p>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+    </div>
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        import { getDatabase, ref, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqfvtbxCadebuMhLyZS-MB8Ypx3i53G74",
+            authDomain: "trekkandtravels-website.firebaseapp.com",
+            databaseURL: "https://trekkandtravels-website-default-rtdb.firebaseio.com",
+            projectId: "trekkandtravels-website",
+            storageBucket: "trekkandtravels-website.firebasestorage.app",
+            messagingSenderId: "297807374917",
+            appId: "1:297807374917:web:416b0710397e6b20bc112c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const database = getDatabase(app);
+
+        // DOM elements
+        const popupForm = document.getElementById('popupForm');
+        const popupImageInput = document.getElementById('popupImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const currentPopupDisplay = document.getElementById('currentPopupDisplay');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // Image preview functionality
+        popupImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Cancel button functionality
+        cancelBtn.addEventListener('click', function() {
+            popupForm.reset();
+            imagePreview.classList.add('hidden');
+        });
+
+        // Show message function
+        function showMessage(message, type = 'success') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-4 rounded-lg shadow-lg mb-4 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+            messageDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            messageContainer.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Handle form submission
+        popupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const imageFile = popupImageInput.files[0];
+            if (!imageFile) {
+                showMessage('Please select an image file.', 'error');
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            
+            try {
+                // Check if popup already exists and delete it first
+                const existingPopupRef = ref(database, 'activePopup');
+                const existingSnapshot = await get(existingPopupRef);
+                
+                if (existingSnapshot.exists()) {
+                    const existingData = existingSnapshot.val();
+                    // Delete existing image from storage
+                    try {
+                        const existingImageRef = storageRef(storage, existingData.imagePath);
+                        await deleteObject(existingImageRef);
+                    } catch (error) {
+                        console.log('No existing image to delete or error deleting:', error);
+                    }
+                }
+
+                // Upload new image to Firebase Storage
+                const imagePath = `popups/active_popup_${Date.now()}_${imageFile.name}`;
+                const imageRef = storageRef(storage, imagePath);
+                const snapshot = await uploadBytes(imageRef, imageFile);
+                
+                // Get the download URL
+                const imageUrl = await getDownloadURL(snapshot.ref);
+                
+                // Save to Realtime Database (replace existing popup)
+                const popupRef = ref(database, 'activePopup');
+                await set(popupRef, {
+                    image: imageUrl,
+                    imagePath: imagePath,
+                    createdAt: Date.now(),
+                    isActive: true
+                });
+                
+                // Reset form and hide loading
+                popupForm.reset();
+                imagePreview.classList.add('hidden');
+                loadingIndicator.classList.add('hidden');
+                
+                showMessage('Popup uploaded successfully!');
+                
+            } catch (error) {
+                console.error('Error saving popup:', error);
+                loadingIndicator.classList.add('hidden');
+                showMessage('Error uploading popup. Please try again.', 'error');
+            }
+        });
+
+        // Load and display current popup
+        function loadCurrentPopup() {
+            const popupRef = ref(database, 'activePopup');
+            onValue(popupRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const popup = snapshot.val();
+                    displayCurrentPopup(popup);
+                } else {
+                    displayNoPopup();
+                }
+            });
+        }
+
+        // Display current popup
+        function displayCurrentPopup(popup) {
+            currentPopupDisplay.innerHTML = `
+                <div class="space-y-4">
+                    <img src="${popup.image}" alt="Active Special Offer" class="max-w-full h-auto rounded-lg shadow-md mx-auto">
+                    <div class="flex justify-center space-x-3">
+                        <button onclick="deleteCurrentPopup()" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                            <i class="fas fa-trash mr-2"></i>
+                            Delete Popup
+                        </button>
+                        <button onclick="togglePopupStatus()" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors">
+                            <i class="fas fa-${popup.isActive ? 'pause' : 'play'} mr-2"></i>
+                            ${popup.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-500 text-center">
+                        Status: <span class="font-semibold ${popup.isActive ? 'text-green-600' : 'text-red-600'}">
+                            ${popup.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </p>
+                </div>
+            `;
+        }
+
+        // Display no popup message
+        function displayNoPopup() {
+            currentPopupDisplay.innerHTML = `
+                <div class="text-gray-500 py-8 text-center">
+                    <i class="fas fa-image text-4xl mb-2"></i>
+                    <p>No popup currently active</p>
+                </div>
+            `;
+        }
+
+        // Delete current popup
+        window.deleteCurrentPopup = async function() {
+            if (!confirm('Are you sure you want to delete the current popup?')) return;
+            
+            loadingIndicator.classList.remove('hidden');
+            
+            try {
+                const popupRef = ref(database, 'activePopup');
+                const snapshot = await get(popupRef);
+                
+                if (snapshot.exists()) {
+                    const popupData = snapshot.val();
+                    
+                    // Delete from Storage
+                    const imageRef = storageRef(storage, popupData.imagePath);
+                    await deleteObject(imageRef);
+                    
+                    // Delete from Database
+                    await remove(popupRef);
+                    
+                    showMessage('Popup deleted successfully!');
+                } else {
+                    showMessage('No popup found to delete.', 'error');
+                }
+                
+                loadingIndicator.classList.add('hidden');
+            } catch (error) {
+                console.error('Error deleting popup:', error);
+                loadingIndicator.classList.add('hidden');
+                showMessage('Error deleting popup. Please try again.', 'error');
+            }
+        };
+
+        // Toggle popup status
+        window.togglePopupStatus = async function() {
+            try {
+                const popupRef = ref(database, 'activePopup');
+                const snapshot = await get(popupRef);
+                
+                if (snapshot.exists()) {
+                    const popupData = snapshot.val();
+                    await set(popupRef, {
+                        ...popupData,
+                        isActive: !popupData.isActive
+                    });
+                    
+                    showMessage(`Popup ${!popupData.isActive ? 'activated' : 'deactivated'} successfully!`);
+                }
+            } catch (error) {
+                console.error('Error toggling popup status:', error);
+                showMessage('Error updating popup status. Please try again.', 'error');
+            }
+        };
+
+        // Load current popup when page loads
+        document.addEventListener('DOMContentLoaded', loadCurrentPopup);
+    </script>
+</body>
+</html>
